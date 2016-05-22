@@ -7,6 +7,7 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.cnt.sms.vo.Matching;
 import com.cnt.sms.vo.Member;
 
 public class MemberDao {
@@ -68,6 +69,66 @@ public class MemberDao {
 		
 	}
 	
+	public List<Matching> getMyMatchingList(int myId) throws Exception {
+		Statement stmt = null;
+		ResultSet rs = null;
+		
+		try {
+			stmt = connection.createStatement();
+			rs = stmt.executeQuery("SELECT SENDER_MNO, RECEIVER_MNO, MATCHING_TYPE, CURRENT_STATUS, REQUEST_DATE" +
+									" FROM MATCHING" +
+									" WHERE SENDER_MNO = " + myId +
+									" ORDER BY REQUEST_DATE ASC");
+			
+			ArrayList<Matching> matchingList = new ArrayList<Matching>();
+			
+			while(rs.next()) {
+				matchingList.add(new Matching()
+						.setSenderNo(rs.getInt("SENDER_MNO"))
+						.setMyTeamName(getTeamName(rs.getInt("SENDER_MNO")))
+						.setRecieverNo(rs.getInt("RECEIVER_MNO"))
+						.setYourTeamName(getTeamName(rs.getInt("RECEIVER_MNO")))
+						.setType(rs.getString("MATCHING_TYPE"))
+						.setStatus(rs.getInt("CURRENT_STATUS"))
+						.setRequestDate(rs.getDate("REQUEST_DATE")));
+			}
+			return matchingList;
+			
+		} catch (Exception e) {
+			throw e;
+		} 
+	}
+	
+	public List<Matching> getYourMatchingList(int myId) throws Exception {
+		Statement stmt = null;
+		ResultSet rs = null;
+		
+		try {
+			stmt = connection.createStatement();
+			rs = stmt.executeQuery("SELECT SENDER_MNO, RECEIVER_MNO, MATCHING_TYPE, CURRENT_STATUS, REQUEST_DATE" +
+									" FROM MATCHING" +
+									" WHERE RECEIVER_MNO = " + myId +
+									" ORDER BY REQUEST_DATE ASC");
+			
+			ArrayList<Matching> matchingList = new ArrayList<Matching>();
+			
+			while(rs.next()) {
+				matchingList.add(new Matching()
+						.setSenderNo(rs.getInt("SENDER_MNO"))
+						.setMyTeamName(getTeamName(rs.getInt("SENDER_MNO")))
+						.setRecieverNo(rs.getInt("RECEIVER_MNO"))
+						.setYourTeamName(getTeamName(rs.getInt("RECEIVER_MNO")))
+						.setType(rs.getString("MATCHING_TYPE"))
+						.setStatus(rs.getInt("CURRENT_STATUS"))
+						.setRequestDate(rs.getDate("REQUEST_DATE")));
+			}
+			return matchingList;
+			
+		} catch (Exception e) {
+			throw e;
+		} 
+	}
+	
 	public List<Member> getMeberList() throws Exception {
 		Statement stmt = null;
 		ResultSet rs = null;
@@ -96,9 +157,44 @@ public class MemberDao {
 			
 		} catch (Exception e) {
 			throw e;
-		} finally {
-			try {if (rs!=null) rs.close(); } catch (Exception e) {}
-			try {if (stmt!=null) stmt.close(); } catch (Exception e) {}
+		} 
+	}
+	
+	public void requestMatching(int myNo, int userNo) throws Exception {
+		PreparedStatement stmt = null;
+		ResultSet rs = null;
+		
+		try {
+			stmt = connection.prepareStatement("INSERT INTO matching (SENDER_MNO, RECEIVER_MNO, MATCHING_TYPE, CURRENT_STATUS, REQUEST_DATE)" 
+											+ "values(?,?,?,?,NOW())");
+			stmt.setInt(1, myNo);
+			stmt.setInt(2, userNo);
+			stmt.setString(3, "manual");
+			stmt.setInt(4, 3);
+			
+			stmt.execute();
+		} catch (Exception e) {
+			throw e;
 		}
+	}
+	
+	public String getTeamName(int id) throws Exception {
+		Statement stmt = null;
+		ResultSet rs = null;
+		String teamName = null;
+		
+		try {
+			stmt = connection.createStatement();
+			rs = stmt.executeQuery("SELECT MTEAM FROM MEMBERS WHERE MNO = " + id);
+			
+			while(rs.next()) {
+				teamName = rs.getString("MTEAM");
+			}
+			
+			return teamName;
+			
+		} catch (Exception e) {
+			throw e;
+		} 
 	}
 }
